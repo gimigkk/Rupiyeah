@@ -1,115 +1,109 @@
 # Rupiyeah
 
-**Fully offline personal budgeting app** built with Flutter.
-
-## Table of Contents
-
-* [About](#about)
-* [Features](#features)
-* [Tech Stack](#tech-stack)
-* [Installation](#installation)
-* [Usage](#usage)
-* [Folder Structure](#folder-structure)
-* [Contributing](#contributing)
-* [License](#license)
+A **fully offline personal budgeting app** built with Flutter.  
+Designed for privacy, portability, and simplicity — no cloud sync, no external dependencies.
 
 ---
 
-## About
-
-Rupiyeah is a fully offline personal budgeting application designed to help users track their expenses, manage budgets, and monitor financial goals without an internet connection.
-
----
-
-## Features
-
-* Offline functionality
-* Track income and expenses
-* Categorize transactions
-* Visualize financial data
-* Multi-platform support: Android, ~iOS, Web, Windows, Linux, macOS~
+## ✨ Key Highlights
+- **[Offline first](guide://action?prefill=Tell%20me%20more%20about%3A%20Offline%20first)**: All data stored locally, no internet required.  
+- **[Multi‑platform support](guide://action?prefill=Tell%20me%20more%20about%3A%20Multi%E2%80%91platform%20support)**: Runs on Android, iOS, Web, Windows, macOS, and Linux.  
+- **[Budget tracking](guide://action?prefill=Tell%20me%20more%20about%3A%20Budget%20tracking)**: Monitor remaining budget, daily spending, and progress with visual indicators.  
+- **[Transaction management](guide://action?prefill=Tell%20me%20more%20about%3A%20Transaction%20management)**: Add, edit, and categorize expenses with multiple slots visible in widgets.  
+- **[Excel export](guide://action?prefill=Tell%20me%20more%20about%3A%20Excel%20export)**: Generate `.xlsx` reports for sharing or backup.  
+- **[Widgets](guide://action?prefill=Tell%20me%20more%20about%3A%20Widgets)**: Homescreen widgets show budget progress and recent transactions.  
 
 ---
 
-## Tech Stack
+## 📂 Project Structure
+```
+lib/
+├── main.dart                # Entry point of the Flutter app
+│
+├── models/                  # Data models
+│   ├── budget.dart          # Budget model (amounts, limits, progress)
+│   ├── transaction.dart     # Transaction model (date, category, amount)
+│   └── category.dart        # Expense categories
+│
+├── services/                # Business logic & helpers
+│   ├── database_service.dart # Local storage (SQLite / Hive)
+│   ├── excel_export.dart     # Export transactions to Excel
+│   └── widget_service.dart   # Handles widget updates
+│
+├── ui/                      # User interface
+│   ├── screens/
+│   │   ├── home_screen.dart # Dashboard with budget overview
+│   │   ├── add_expense.dart # Form to add new transactions
+│   │   ├── reports_screen.dart # Charts & summaries
+│   │   └── settings_screen.dart # App settings
+│   │
+│   ├── widgets/
+│   │   ├── budget_card.dart # Card showing budget progress
+│   │   ├── transaction_list.dart # List of recent transactions
+│   │   └── progress_bar.dart # Custom progress bar widget
+│   │
+│   └── theme/
+│       └── app_theme.dart   # Colors, typography, styles
+│
+├── utils/                   # Utility functions
+│   ├── date_utils.dart      # Date formatting helpers
+│   ├── number_utils.dart    # Currency formatting
+│   └── constants.dart       # Static values (strings, keys)
+│
+└── providers/               # State management
+    ├── budget_provider.dart # Handles budget state
+    └── transaction_provider.dart # Handles transaction state
+```
 
-* **Flutter** (Dart)
-* **Kotlin** (Android)
-* **Swift** (iOS)
-* **C++ & CMake** (platform-specific components)
-* **HTML** (Web)
+### 📂 Structure Highlights
+- **`models/`**: Defines the core data structures (budget, transaction, category).  
+- **`services/`**: Encapsulates logic for persistence, exports, and widget updates.  
+- **`ui/`**: Contains screens, reusable widgets, and theming.  
+- **`utils/`**: Helper functions for formatting and constants.  
+- **`providers/`**: State management layer.  
 
 ---
 
-## Installation
+## 🚀 Getting Started
 
-1. Clone the repository:
+### Prerequisites
+- Install [Flutter SDK](guide://action?prefill=Tell%20me%20more%20about%3A%20Flutter%20SDK) (latest stable channel).  
+- Ensure platform toolchains are set up (Android Studio/Xcode for mobile, CMake for desktop).  
 
+### Installation
 ```bash
 git clone https://github.com/gimigkk/Rupiyeah.git
-```
-
-2. Navigate to the project directory:
-
-```bash
 cd Rupiyeah
-```
-
-3. Install dependencies:
-
-```bash
 flutter pub get
-```
-
-4. Run the app:
-
-```bash
 flutter run
 ```
 
-> **Note:** Ensure you have Flutter SDK installed and configured for your target platform.
+---
+
+## 📱 Usage
+- Launch the app and **set your budget**.  
+- Record **daily transactions** with categories.  
+- View **progress bars and summaries** in the app or via widgets.  
+- Export data to **Excel** for external analysis.  
 
 ---
 
-## Usage
-
-* Launch the app on your preferred platform.
-* Add your income and expenses.
-* Categorize transactions to visualize spending habits.
-* Track budgets and financial goals offline.
-
----
-
-## Folder Structure
-
-```
-Rupiyeah/
-├─ android/       # Android-specific code
-├─ ios/           # iOS-specific code
-├─ lib/           # Main Flutter application code
-├─ linux/         # Linux-specific code
-├─ macos/         # macOS-specific code
-├─ web/           # Web-specific code
-├─ windows/       # Windows-specific code
-├─ pubspec.yaml   # Flutter dependencies
-├─ README.md
-└─ analysis_options.yaml
-```
+## 🤝 Contributing
+Contributions are welcome!  
+1. Fork the repo  
+2. Create a feature branch  
+   ```bash
+   git checkout -b feature/new-feature
+   ```
+3. Commit changes  
+   ```bash
+   git commit -m "Add new feature"
+   ```
+4. Push and open a Pull Request  
 
 ---
 
-## Contributing
-
-Contributions are welcome!
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'Add new feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+## 📜 License
+Licensed under the **MIT License** — free to use, modify, and distribute.
 
 ---
-
-## License
-
-This project is licensed under the MIT License.
