@@ -27,7 +27,7 @@ Rupiyeah is a fully offline personal budgeting application designed to help user
 * Track income and expenses
 * Categorize transactions
 * Visualize financial data
-* Multi-platform support: Android, iOS, Web, Windows, Linux, macOS
+* Multi-platform support: Android, ~iOS, Web, Windows, Linux, macOS~
 
 ---
 
@@ -113,9 +113,3 @@ Contributions are welcome!
 ## License
 
 This project is licensed under the MIT License.
-
----
-
-If you want, I can also **enhance this README with screenshots, sample UI images, and a “Getting Started” guide with a sample budget workflow** so it looks more polished and ready for GitHub.
-
-Do you want me to do that next?
