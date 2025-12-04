@@ -1,4 +1,4 @@
-# Rupiyeah
+# Rupiyeah (ini readmenya ngawur banget anjir wkwkkwkw)
 
 A **fully offline personal budgeting app** built with Flutter.  
 Designed for privacy, portability, and simplicity — no cloud sync, no external dependencies.
