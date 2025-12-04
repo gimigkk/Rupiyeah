@@ -161,10 +161,18 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
       builder: (context, themeProvider, child) {
         return MaterialApp(
           navigatorKey: navigatorKey,
-          title: 'Budget App',
+          title: 'Rupiyeah',
           debugShowCheckedModeBanner: false,
           theme: themeProvider.currentTheme
-              .toThemeData(isDarkMode: themeProvider.isDarkMode),
+              .toThemeData(isDarkMode: themeProvider.isDarkMode)
+              .copyWith(
+                pageTransitionsTheme: const PageTransitionsTheme(
+                  builders: {
+                    TargetPlatform.android: ZoomPageTransitionsBuilder(),
+                    TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
+                  },
+                ),
+              ),
           home: HomePage(key: homePageKey),
         );
       },

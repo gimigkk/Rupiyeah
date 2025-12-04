@@ -8,6 +8,7 @@ import '../widgets/daily_expense_chart.dart';
 import '../providers/theme_provider.dart';
 import '../services/widget_service.dart';
 import 'add_transaction_page.dart';
+import '../services/export_service.dart';
 
 class HistoryPage extends StatefulWidget {
   final String monthId;
@@ -66,6 +67,7 @@ class HistoryPageState extends State<HistoryPage> {
     });
   }
 
+  // Replace the _showOptionsMenu method with this updated version:
   void _showOptionsMenu() {
     final theme = Provider.of<ThemeProvider>(context, listen: false);
     final cardColor = theme.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
@@ -94,6 +96,28 @@ class HistoryPageState extends State<HistoryPage> {
               ),
               const SizedBox(height: 8),
               ListTile(
+                leading: Icon(Icons.file_upload_outlined, color: theme.primary),
+                title: Text(
+                  'Export Data',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  'Export transactions to Excel or CSV',
+                  style: TextStyle(
+                    color:
+                        theme.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showExportDialog();
+                },
+              ),
+              ListTile(
                 leading: Icon(Icons.delete_sweep, color: theme.danger),
                 title: Text(
                   'Clear All Transactions',
@@ -115,28 +139,267 @@ class HistoryPageState extends State<HistoryPage> {
                   _confirmClearAllData();
                 },
               ),
-              ListTile(
-                leading:
-                    Icon(Icons.file_download_outlined, color: Colors.grey[400]),
-                title: Text(
-                  'Export Data',
-                  style: TextStyle(color: Colors.grey[400]),
-                ),
-                subtitle: Text(
-                  'Coming soon',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 12,
-                  ),
-                ),
-                enabled: false,
-              ),
               const SizedBox(height: 8),
             ],
           ),
         ),
       ),
     );
+  }
+
+// Add this new method to show export format dialog:
+  void _showExportDialog() {
+    final theme = Provider.of<ThemeProvider>(context, listen: false);
+    final cardColor = theme.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = theme.isDarkMode ? Colors.white : Colors.black87;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Export Format',
+          style: TextStyle(color: textColor),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Choose the format for your export:',
+              style: TextStyle(color: textColor, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+
+            // Excel Option
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                _exportToExcel();
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: theme.primary.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(12),
+                  color: theme.primary.withOpacity(0.05),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.table_chart, color: theme.primary, size: 28),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Excel (.xlsx)',
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Multiple sheets, charts & statistics',
+                            style: TextStyle(
+                              color: theme.isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios,
+                        color: theme.primary, size: 16),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // CSV Option
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                _exportToCSV();
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.description, color: Colors.grey[600], size: 28),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'CSV (.csv)',
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Simple format, all transactions',
+                            style: TextStyle(
+                              color: theme.isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios,
+                        color: Colors.grey[600], size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: textColor)),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Add method to export to Excel:
+  Future<void> _exportToExcel() async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Text('Generating Excel file...'),
+            ],
+          ),
+        ),
+      );
+
+      // Perform export
+      await ExportService.exportToExcel(widget.monthId);
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel file exported successfully!'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (mounted) Navigator.pop(context);
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to export: $e'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+// Add method to export to CSV:
+  Future<void> _exportToCSV() async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Text('Generating CSV file...'),
+            ],
+          ),
+        ),
+      );
+
+      // Perform export
+      await ExportService.exportToCSV(widget.monthId);
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('CSV file exported successfully!'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (mounted) Navigator.pop(context);
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to export: $e'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    }
   }
 
   void _confirmClearAllData() {
