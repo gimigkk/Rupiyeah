@@ -45,7 +45,9 @@ dependencies:
   open_file: ^3.3.2
 
   # Exporting transaction data.
-  excel: ^4.0.3
+  #excel: ^4.0.3
+  syncfusion_flutter_xlsio: ^30.0.0
+  syncfusion_officechart: ^30.0.0
   csv: ^6.0.0
   share_plus: ^7.2.1
 

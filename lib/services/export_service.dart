@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'package:excel/excel.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' hide Column, Row;
+import 'package:syncfusion_officechart/officechart.dart';
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -7,11 +8,13 @@ import '../models/transaction.dart';
 import '../models/tag.dart';
 import '../models/month_data.dart';
 import '../storage/database_helper.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ExportService {
   /// Export current month's data to Excel with charts and statistics
   static Future<void> exportToExcel(String monthId) async {
-    final excel = Excel.createExcel();
+    // Create a new Excel document
+    final Workbook workbook = Workbook();
 
     // Get month data and transactions
     final monthData = DatabaseHelper.getMonth(monthId);
@@ -25,35 +28,34 @@ class ExportService {
     // Create a map for quick tag lookup
     final tagMap = {for (var tag in allTags) tag.id: tag};
 
-    // Remove default sheets
-    excel.delete('Sheet1');
+    // Remove default sheets and create our custom sheets
+    workbook.worksheets.clear();
 
-    // 1. Create Statistics Sheet
-    _createStatisticsSheet(excel, monthData, transactions, tagMap);
+    // 1. Create Statistics Sheet (with charts)
+    final statsSheet = workbook.worksheets.addWithName('Statistics');
+    _createStatisticsSheet(statsSheet, monthData, transactions, tagMap);
 
     // 2. Create All Transactions Sheet
-    _createAllTransactionsSheet(excel, transactions, tagMap);
+    final allTransSheet = workbook.worksheets.addWithName('All Transactions');
+    _createAllTransactionsSheet(allTransSheet, transactions, tagMap);
 
     // 3. Create Income Only Sheet
-    _createFilteredTransactionsSheet(excel, 'Income',
+    final incomeSheet = workbook.worksheets.addWithName('Income');
+    _createFilteredTransactionsSheet(incomeSheet, 'Income',
         transactions.where((t) => t.type == 'income').toList(), tagMap);
 
     // 4. Create Expense Only Sheet
-    _createFilteredTransactionsSheet(excel, 'Expenses',
+    final expenseSheet = workbook.worksheets.addWithName('Expenses');
+    _createFilteredTransactionsSheet(expenseSheet, 'Expenses',
         transactions.where((t) => t.type == 'expense').toList(), tagMap);
 
     // 5. Create Withdrawal Only Sheet
-    _createFilteredTransactionsSheet(excel, 'Withdrawals',
+    final withdrawalSheet = workbook.worksheets.addWithName('Withdrawals');
+    _createFilteredTransactionsSheet(withdrawalSheet, 'Withdrawals',
         transactions.where((t) => t.type == 'withdrawal').toList(), tagMap);
 
-    // 6. Create Daily Expenses Chart Data
-    _createDailyExpensesSheet(excel, transactions);
-
-    // 7. Create Tag Distribution Sheet
-    _createTagDistributionSheet(excel, transactions, tagMap);
-
     // Save and share the file
-    await _saveAndShareExcel(excel, monthData.getMonthName());
+    await _saveAndShareExcel(workbook, monthData.getMonthName());
   }
 
   /// Export current month's data to CSV (simple format)
@@ -91,28 +93,33 @@ class ExportService {
     await _saveAndShareCSV(csv, monthData.getMonthName());
   }
 
-  /// Create statistics summary sheet
-  static void _createStatisticsSheet(Excel excel, MonthData monthData,
+  /// Create statistics summary sheet with charts
+  static void _createStatisticsSheet(Worksheet sheet, MonthData monthData,
       List<Transaction> transactions, Map<String, Tag> tagMap) {
-    final sheet = excel['Statistics'];
-
     final currencySymbol = DatabaseHelper.getCurrencySymbol();
+    final expenseTransactions =
+        transactions.where((t) => t.type == 'expense').toList();
 
-    // Title
-    sheet.merge(CellIndex.indexByString('A1'), CellIndex.indexByString('D1'));
-    var titleCell = sheet.cell(CellIndex.indexByString('A1'));
-    titleCell.value =
-        TextCellValue('${monthData.getMonthName()} - Financial Summary');
-    titleCell.cellStyle = CellStyle(
-      bold: true,
-      fontSize: 16,
-      horizontalAlign: HorizontalAlign.Center,
-    );
+    // ---------------------------------------------------------
+    // SECTION A: MAIN TITLE
+    // ---------------------------------------------------------
+    sheet.getRangeByName('A1:F1').merge();
+    final titleRange = sheet.getRangeByName('A1');
+    titleRange.setText('${monthData.getMonthName()} - Financial Report');
+    titleRange.cellStyle.bold = true;
+    titleRange.cellStyle.fontSize = 18;
+    titleRange.cellStyle.hAlign = HAlignType.center;
+    titleRange.cellStyle.vAlign = VAlignType.center;
+    titleRange.cellStyle.backColor = '#4472C4';
+    titleRange.cellStyle.fontColor = '#FFFFFF';
+    sheet.getRangeByName('A1').rowHeight = 30;
 
     int row = 3;
 
-    // Overall Summary
-    _addSectionHeader(sheet, row, 'Overall Summary');
+    // ---------------------------------------------------------
+    // SECTION B: OVERALL SUMMARY
+    // ---------------------------------------------------------
+    _addSectionHeader(sheet, row, 'Financial Overview');
     row++;
     _addStatRow(
         sheet, row, 'Total Income:', monthData.totalIncome, currencySymbol);
@@ -128,98 +135,170 @@ class ExportService {
     row++;
     _addStatRow(
         sheet, row, 'Bank Balance:', monthData.bankBalance, currencySymbol);
+
+    row += 2; // Spacer
+
+    // ---------------------------------------------------------
+    // SECTION C: ANALYSIS
+    // ---------------------------------------------------------
+    _addSectionHeader(sheet, row, 'Spending Analysis');
     row++;
 
-    row++;
-
-    // Daily Statistics
-    _addSectionHeader(sheet, row, 'Daily Statistics');
-    row++;
-    final expenseTransactions =
-        transactions.where((t) => t.type == 'expense').toList();
     final daysWithExpenses = expenseTransactions
         .map((t) => DateTime(t.date.year, t.date.month, t.date.day))
         .toSet()
-        .length
-        .toInt();
+        .length;
 
     final avgDailySpending = daysWithExpenses > 0
         ? (monthData.totalExpenses / daysWithExpenses).toDouble()
         : 0.0;
 
-    _addStatRow(sheet, row, 'Average Daily Spending:', avgDailySpending,
-        currencySymbol);
+    _addStatRow(
+        sheet, row, 'Avg Daily Spending:', avgDailySpending, currencySymbol);
     row++;
     _addStatRow(
-        sheet, row, 'Days with Expenses:', daysWithExpenses.toDouble(), '',
+        sheet, row, 'Active Spending Days:', daysWithExpenses.toDouble(), '',
         isInteger: true);
+
+    row += 2; // Spacer
+
+    // ---------------------------------------------------------
+    // SECTION D: DATA FOR CHARTS
+    // ---------------------------------------------------------
+    final int chartDataStartRow = row;
+
+    // -- Daily Expenses Data (For Line Chart) --
+    _addSectionHeader(sheet, row, 'Daily Expenses Breakdown');
     row++;
 
-    // Find highest expense day
-    if (expenseTransactions.isNotEmpty) {
-      final dailyExpenses = <DateTime, double>{};
-      for (var t in expenseTransactions) {
-        final day = DateTime(t.date.year, t.date.month, t.date.day);
-        dailyExpenses[day] = (dailyExpenses[day] ?? 0) + t.amount;
-      }
-
-      final highestDay =
-          dailyExpenses.entries.reduce((a, b) => a.value > b.value ? a : b);
-      _addStatRow(
-          sheet, row, 'Highest Expense Day:', highestDay.value, currencySymbol);
-      row++;
-      _addTextRow(sheet, row, '  Date:', _formatDate(highestDay.key));
-      row++;
-    }
-
+    // Headers
+    sheet.getRangeByIndex(row, 1).setText('Date');
+    sheet.getRangeByIndex(row, 2).setText('Amount');
+    sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
+    sheet.getRangeByIndex(row, 2).cellStyle.bold = true;
+    sheet.getRangeByIndex(row, 1).cellStyle.borders.all.lineStyle =
+        LineStyle.thin;
+    sheet.getRangeByIndex(row, 2).cellStyle.borders.all.lineStyle =
+        LineStyle.thin;
     row++;
 
-    // Top Expenses
-    _addSectionHeader(sheet, row, 'Top 5 Expenses');
-    row++;
-    final sortedExpenses = expenseTransactions
-      ..sort((a, b) => b.amount.compareTo(a.amount));
-    final top5 = sortedExpenses.take(5);
+    final int dailyDataStartRow = row;
 
-    for (var transaction in top5) {
-      final tag = tagMap[transaction.tagId];
-      _addTextRow(
-          sheet,
-          row,
-          '${tag?.name ?? "Unknown"} - ${transaction.description}',
-          '$currencySymbol ${_formatNumber(transaction.amount)}');
-      row++;
-    }
-
-    row++;
-
-    // Most Used Tags
-    _addSectionHeader(sheet, row, 'Most Used Tags (Expenses)');
-    row++;
-    final tagUsage = <String, int>{};
+    // Group by day
+    final dailyExpenses = <DateTime, double>{};
     for (var t in expenseTransactions) {
-      tagUsage[t.tagId] = (tagUsage[t.tagId] ?? 0) + 1;
+      final day = DateTime(t.date.year, t.date.month, t.date.day);
+      dailyExpenses[day] = (dailyExpenses[day] ?? 0) + t.amount;
+    }
+    final sortedDays = dailyExpenses.keys.toList()..sort();
+
+    for (var day in sortedDays) {
+      sheet.getRangeByIndex(row, 1).setText(_formatDate(day));
+      sheet.getRangeByIndex(row, 2).setNumber(dailyExpenses[day]!);
+      row++;
     }
 
-    final sortedTags = tagUsage.entries.toList()
+    final int dailyDataEndRow = row - 1;
+
+    row += 2; // Spacer
+
+    // -- Tag Distribution Data (For Pie Chart) --
+    final int tagDataStartRow = row;
+    _addSectionHeader(sheet, row, 'Expenses by Tag');
+    row++;
+
+    // Headers
+    sheet.getRangeByIndex(row, 1).setText('Category');
+    sheet.getRangeByIndex(row, 2).setText('Amount');
+    sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
+    sheet.getRangeByIndex(row, 2).cellStyle.bold = true;
+    sheet.getRangeByIndex(row, 1).cellStyle.borders.all.lineStyle =
+        LineStyle.thin;
+    sheet.getRangeByIndex(row, 2).cellStyle.borders.all.lineStyle =
+        LineStyle.thin;
+    row++;
+
+    final int pieDataStartRow = row;
+
+    // Group by tag
+    final tagTotals = <String, double>{};
+    for (var t in expenseTransactions) {
+      tagTotals[t.tagId] = (tagTotals[t.tagId] ?? 0) + t.amount;
+    }
+    final sortedTags = tagTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    for (var entry in sortedTags.take(5)) {
+    for (var entry in sortedTags) {
       final tag = tagMap[entry.key];
-      _addTextRow(sheet, row, '${tag?.name ?? "Unknown"}:',
-          '${entry.value} transactions');
+      sheet.getRangeByIndex(row, 1).setText(tag?.name ?? 'Unknown');
+      sheet.getRangeByIndex(row, 2).setNumber(entry.value);
       row++;
     }
 
+    final int pieDataEndRow = row - 1;
+
+    // Create BOTH charts together in a single ChartCollection
+    final ChartCollection charts = ChartCollection(sheet);
+
+    // Add Line Chart for Daily Expenses
+    if (sortedDays.isNotEmpty) {
+      final Chart dailyChart = charts.add();
+      dailyChart.chartType = ExcelChartType.line;
+      dailyChart.dataRange =
+          sheet.getRangeByName('A$dailyDataStartRow:B$dailyDataEndRow');
+      dailyChart.isSeriesInRows = false;
+      dailyChart.hasLegend = true;
+      dailyChart.chartTitle = 'Daily Expenses Trend';
+      dailyChart.chartTitleArea.bold = true;
+      dailyChart.chartTitleArea.size = 12;
+
+      // Position chart
+      dailyChart.topRow = chartDataStartRow;
+      dailyChart.leftColumn = 4;
+      dailyChart.bottomRow = chartDataStartRow + 20;
+      dailyChart.rightColumn = 10;
+
+      // Style the primary category axis
+      dailyChart.primaryCategoryAxis.title = 'Date';
+      dailyChart.primaryValueAxis.title = 'Amount ($currencySymbol)';
+      dailyChart.primaryValueAxis.hasMajorGridLines = true;
+    }
+
+    // Add Pie Chart for Tag Distribution
+    if (sortedTags.isNotEmpty) {
+      final Chart pieChart = charts.add();
+      pieChart.chartType = ExcelChartType.pie;
+      pieChart.dataRange =
+          sheet.getRangeByName('A$pieDataStartRow:B$pieDataEndRow');
+      pieChart.isSeriesInRows = false;
+      pieChart.hasLegend = true;
+      pieChart.chartTitle = 'Expenses by Category';
+      pieChart.chartTitleArea.bold = true;
+      pieChart.chartTitleArea.size = 12;
+
+      // Position chart below the line chart
+      pieChart.topRow = tagDataStartRow;
+      pieChart.leftColumn = 4;
+      pieChart.bottomRow = tagDataStartRow + 20;
+      pieChart.rightColumn = 10;
+
+      // Show data labels with category names
+      final ChartSerie serie = pieChart.series[0];
+      serie.dataLabels.isValue = true;
+      serie.dataLabels.isCategoryName = true;
+    }
+
+    // Assign the ChartCollection with all charts to the worksheet
+    sheet.charts = charts;
+
     // Auto-fit columns
-    _autoFitColumns(sheet, 4);
+    sheet.autoFitColumn(1);
+    sheet.autoFitColumn(2);
   }
 
   /// Create all transactions sheet
-  static void _createAllTransactionsSheet(
-      Excel excel, List<Transaction> transactions, Map<String, Tag> tagMap) {
-    final sheet = excel['All Transactions'];
-
+  static void _createAllTransactionsSheet(Worksheet sheet,
+      List<Transaction> transactions, Map<String, Tag> tagMap) {
     // Headers
     final headers = [
       'Date',
@@ -229,85 +308,65 @@ class ExportService {
       'Amount',
       'Payment Method'
     ];
+
     for (int i = 0; i < headers.length; i++) {
-      var cell =
-          sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
-      cell.value = TextCellValue(headers[i]);
-      cell.cellStyle = CellStyle(
-        bold: true,
-        backgroundColorHex: ExcelColor.fromHexString('#D3D3D3'),
-      );
+      final cell = sheet.getRangeByIndex(1, i + 1);
+      cell.setText(headers[i]);
+      cell.cellStyle.bold = true;
+      cell.cellStyle.backColor = '#D3D3D3';
+      cell.cellStyle.borders.all.lineStyle = LineStyle.thin;
     }
 
     // Data rows
-    int row = 1;
+    int row = 2;
     for (var transaction in transactions) {
       final tag = tagMap[transaction.tagId];
 
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-          .value = TextCellValue(_formatDate(transaction.date));
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
-          .value = TextCellValue(_capitalizeFirst(transaction.type));
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
-          .value = TextCellValue(tag?.name ?? 'Unknown');
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
-          .value = TextCellValue(transaction.description);
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row))
-          .value = DoubleCellValue(transaction.amount);
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: row))
-          .value = TextCellValue(transaction.paymentMethod ?? 'N/A');
+      sheet.getRangeByIndex(row, 1).setText(_formatDate(transaction.date));
+      sheet.getRangeByIndex(row, 2).setText(_capitalizeFirst(transaction.type));
+      sheet.getRangeByIndex(row, 3).setText(tag?.name ?? 'Unknown');
+      sheet.getRangeByIndex(row, 4).setText(transaction.description);
+      sheet.getRangeByIndex(row, 5).setNumber(transaction.amount);
+      sheet.getRangeByIndex(row, 6).setText(transaction.paymentMethod ?? 'N/A');
 
       row++;
     }
 
-    _autoFitColumns(sheet, headers.length);
+    // Auto-fit columns
+    for (int i = 1; i <= headers.length; i++) {
+      sheet.autoFitColumn(i);
+    }
   }
 
   /// Create filtered transactions sheet (Income/Expense/Withdrawal)
-  static void _createFilteredTransactionsSheet(Excel excel, String sheetName,
-      List<Transaction> transactions, Map<String, Tag> tagMap) {
-    final sheet = excel[sheetName];
-
+  static void _createFilteredTransactionsSheet(
+      Worksheet sheet,
+      String sheetName,
+      List<Transaction> transactions,
+      Map<String, Tag> tagMap) {
     // Headers
     final headers = ['Date', 'Tag', 'Description', 'Amount', 'Payment Method'];
+
     for (int i = 0; i < headers.length; i++) {
-      var cell =
-          sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
-      cell.value = TextCellValue(headers[i]);
-      cell.cellStyle = CellStyle(
-        bold: true,
-        backgroundColorHex: ExcelColor.fromHexString('#D3D3D3'),
-      );
+      final cell = sheet.getRangeByIndex(1, i + 1);
+      cell.setText(headers[i]);
+      cell.cellStyle.bold = true;
+      cell.cellStyle.backColor = '#D3D3D3';
+      cell.cellStyle.borders.all.lineStyle = LineStyle.thin;
     }
 
     // Data rows
-    int row = 1;
+    int row = 2;
     double total = 0;
 
     for (var transaction in transactions) {
       final tag = tagMap[transaction.tagId];
 
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-          .value = TextCellValue(_formatDate(transaction.date));
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
-          .value = TextCellValue(tag?.name ?? 'Unknown');
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
-          .value = TextCellValue(transaction.description);
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
-          .value = DoubleCellValue(transaction.amount);
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row))
-          .value = TextCellValue(transaction.paymentMethod ?? 'N/A');
+      sheet.getRangeByIndex(row, 1).setText(_formatDate(transaction.date));
+      sheet.getRangeByIndex(row, 2).setText(tag?.name ?? 'Unknown');
+      sheet.getRangeByIndex(row, 3).setText(transaction.description);
+      sheet.getRangeByIndex(row, 4).setNumber(transaction.amount);
+      sheet.getRangeByIndex(row, 5).setText(transaction.paymentMethod ?? 'N/A');
 
       total += transaction.amount;
       row++;
@@ -315,160 +374,39 @@ class ExportService {
 
     // Add total row
     row++;
-    var totalLabelCell =
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row));
-    totalLabelCell.value = TextCellValue('TOTAL:');
-    totalLabelCell.cellStyle = CellStyle(bold: true);
+    final totalLabelCell = sheet.getRangeByIndex(row, 3);
+    totalLabelCell.setText('TOTAL:');
+    totalLabelCell.cellStyle.bold = true;
 
-    var totalValueCell =
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row));
-    totalValueCell.value = DoubleCellValue(total);
-    totalValueCell.cellStyle = CellStyle(bold: true);
+    final totalValueCell = sheet.getRangeByIndex(row, 4);
+    totalValueCell.setNumber(total);
+    totalValueCell.cellStyle.bold = true;
 
-    _autoFitColumns(sheet, headers.length);
-  }
-
-  /// Create daily expenses sheet for charting
-  static void _createDailyExpensesSheet(
-      Excel excel, List<Transaction> transactions) {
-    final sheet = excel['Daily Expenses'];
-
-    final expenses = transactions.where((t) => t.type == 'expense').toList();
-
-    // Group by day
-    final dailyExpenses = <DateTime, double>{};
-    for (var transaction in expenses) {
-      final day = DateTime(
-          transaction.date.year, transaction.date.month, transaction.date.day);
-      dailyExpenses[day] = (dailyExpenses[day] ?? 0) + transaction.amount;
+    // Auto-fit columns
+    for (int i = 1; i <= headers.length; i++) {
+      sheet.autoFitColumn(i);
     }
-
-    // Sort by date
-    final sortedDays = dailyExpenses.keys.toList()..sort();
-
-    // Headers
-    sheet.cell(CellIndex.indexByString('A1')).value = TextCellValue('Date');
-    sheet.cell(CellIndex.indexByString('B1')).value =
-        TextCellValue('Total Expenses');
-
-    var headerStyle = CellStyle(
-        bold: true, backgroundColorHex: ExcelColor.fromHexString('#D3D3D3'));
-    sheet.cell(CellIndex.indexByString('A1')).cellStyle = headerStyle;
-    sheet.cell(CellIndex.indexByString('B1')).cellStyle = headerStyle;
-
-    // Data
-    int row = 1;
-    for (var day in sortedDays) {
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-          .value = TextCellValue(_formatDate(day));
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
-          .value = DoubleCellValue(dailyExpenses[day]!);
-      row++;
-    }
-
-    _autoFitColumns(sheet, 2);
-  }
-
-  /// Create tag distribution sheet for pie chart
-  static void _createTagDistributionSheet(
-      Excel excel, List<Transaction> transactions, Map<String, Tag> tagMap) {
-    final sheet = excel['Tag Distribution'];
-
-    final expenses = transactions.where((t) => t.type == 'expense').toList();
-
-    // Group by tag
-    final tagTotals = <String, double>{};
-    for (var transaction in expenses) {
-      tagTotals[transaction.tagId] =
-          (tagTotals[transaction.tagId] ?? 0) + transaction.amount;
-    }
-
-    // Sort by amount
-    final sortedTags = tagTotals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    // Headers
-    sheet.cell(CellIndex.indexByString('A1')).value = TextCellValue('Tag');
-    sheet.cell(CellIndex.indexByString('B1')).value =
-        TextCellValue('Total Amount');
-    sheet.cell(CellIndex.indexByString('C1')).value =
-        TextCellValue('Percentage');
-
-    var headerStyle = CellStyle(
-        bold: true, backgroundColorHex: ExcelColor.fromHexString('#D3D3D3'));
-    sheet.cell(CellIndex.indexByString('A1')).cellStyle = headerStyle;
-    sheet.cell(CellIndex.indexByString('B1')).cellStyle = headerStyle;
-    sheet.cell(CellIndex.indexByString('C1')).cellStyle = headerStyle;
-
-    // Calculate total for percentages
-    final total = tagTotals.values.fold(0.0, (sum, amount) => sum + amount);
-
-    // Data
-    int row = 1;
-    for (var entry in sortedTags) {
-      final tag = tagMap[entry.key];
-      final percentage =
-          total > 0 ? (entry.value / total * 100).toDouble() : 0.0;
-
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-          .value = TextCellValue(tag?.name ?? 'Unknown');
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
-          .value = DoubleCellValue(entry.value);
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
-          .value = TextCellValue('${percentage.toStringAsFixed(1)}%');
-      row++;
-    }
-
-    _autoFitColumns(sheet, 3);
   }
 
   // Helper methods
 
-  static void _addSectionHeader(Sheet sheet, int row, String title) {
-    var cell =
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row));
-    cell.value = TextCellValue(title);
-    cell.cellStyle = CellStyle(
-      bold: true,
-      fontSize: 12,
-      backgroundColorHex: ExcelColor.fromHexString('#4472C4'),
-      fontColorHex: ExcelColor.fromHexString('#FFFFFF'),
-    );
+  static void _addSectionHeader(Worksheet sheet, int row, String title) {
+    final cell = sheet.getRangeByIndex(row, 1);
+    cell.setText(title);
+    cell.cellStyle.bold = true;
+    cell.cellStyle.fontSize = 12;
+    cell.cellStyle.fontColor = '#4472C4';
   }
 
   static void _addStatRow(
-      Sheet sheet, int row, String label, double value, String currency,
+      Worksheet sheet, int row, String label, double value, String currency,
       {bool isInteger = false}) {
-    sheet
-        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-        .value = TextCellValue(label);
+    sheet.getRangeByIndex(row, 1).setText(label);
 
     final formattedValue =
         isInteger ? value.toInt().toString() : _formatNumber(value);
 
-    sheet
-        .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
-        .value = TextCellValue('$currency $formattedValue'.trim());
-  }
-
-  static void _addTextRow(Sheet sheet, int row, String label, String value) {
-    sheet
-        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
-        .value = TextCellValue(label);
-    sheet
-        .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
-        .value = TextCellValue(value);
-  }
-
-  static void _autoFitColumns(Sheet sheet, int columnCount) {
-    for (int i = 0; i < columnCount; i++) {
-      sheet.setColumnWidth(i, 20);
-    }
+    sheet.getRangeByIndex(row, 2).setText('$currency $formattedValue'.trim());
   }
 
   static String _formatDate(DateTime date) {
@@ -489,45 +427,105 @@ class ExportService {
     return text[0].toUpperCase() + text.substring(1);
   }
 
-  static Future<void> _saveAndShareExcel(Excel excel, String monthName) async {
-    // Encode to bytes
-    final bytes = excel.encode();
-    if (bytes == null) {
-      throw Exception('Failed to encode Excel file');
-    }
-
-    // Get temporary directory
-    final directory = await getTemporaryDirectory();
+  static Future<void> _saveAndShareExcel(
+      Workbook workbook, String monthName) async {
     final fileName = 'Budget_${monthName.replaceAll(' ', '_')}.xlsx';
-    final filePath = '${directory.path}/$fileName';
+    final List<int> bytes = workbook.saveAsStream();
+    workbook.dispose();
 
-    // Write file
-    final file = File(filePath);
-    await file.writeAsBytes(bytes);
+    final savedPath = await _saveToDownloads(bytes, fileName);
 
-    // Share file
-    await Share.shareXFiles(
-      [XFile(filePath)],
-      subject: 'Budget Report - $monthName',
-      text: 'Here is your budget report for $monthName',
-    );
+    if (savedPath != null) {
+      await Share.shareXFiles(
+        [XFile(savedPath)],
+        subject: 'Budget Report - $monthName',
+        text: 'Here is your budget report for $monthName',
+      );
+    } else {
+      final directory = await getTemporaryDirectory();
+      final tempPath = '${directory.path}/$fileName';
+      final tempFile = File(tempPath);
+      await tempFile.writeAsBytes(bytes);
+      await Share.shareXFiles([XFile(tempPath)]);
+    }
   }
 
   static Future<void> _saveAndShareCSV(String csv, String monthName) async {
-    // Get temporary directory
-    final directory = await getTemporaryDirectory();
     final fileName = 'Budget_${monthName.replaceAll(' ', '_')}.csv';
-    final filePath = '${directory.path}/$fileName';
+    final bytes = csv.codeUnits;
 
-    // Write file
-    final file = File(filePath);
-    await file.writeAsString(csv);
+    final savedPath = await _saveToDownloads(bytes, fileName);
 
-    // Share file
-    await Share.shareXFiles(
-      [XFile(filePath)],
-      subject: 'Budget Report - $monthName',
-      text: 'Here is your budget report for $monthName',
-    );
+    if (savedPath != null) {
+      await Share.shareXFiles(
+        [XFile(savedPath)],
+        subject: 'Budget Report - $monthName',
+        text: 'Here is your budget report for $monthName',
+      );
+    } else {
+      final directory = await getTemporaryDirectory();
+      final tempPath = '${directory.path}/$fileName';
+      final tempFile = File(tempPath);
+      await tempFile.writeAsString(csv);
+      await Share.shareXFiles([XFile(tempPath)]);
+    }
+  }
+
+  static Future<String?> _saveToDownloads(
+      List<int> bytes, String fileName) async {
+    try {
+      Directory? dir;
+
+      if (Platform.isAndroid) {
+        // ANDROID LOGIC: Try standard Download path first
+        if (await _requestPermission()) {
+          dir = Directory('/storage/emulated/0/Download');
+
+          // Fallback if the standard path doesn't exist (unlikely)
+          if (!await dir.exists()) {
+            dir = (await getExternalStorageDirectory())!;
+          }
+        }
+      } else if (Platform.isIOS) {
+        // iOS LOGIC: Save to ApplicationDocuments
+        dir = await getApplicationDocumentsDirectory();
+      }
+
+      if (dir != null) {
+        // Implement unique filename logic to prevent overwrite errors
+        String baseName = fileName.substring(0, fileName.lastIndexOf('.'));
+        String extension = fileName.substring(fileName.lastIndexOf('.'));
+
+        String uniquePath = '${dir.path}/$fileName';
+        int counter = 1;
+
+        // Check if the file exists and append a number until a unique path is found
+        while (await File(uniquePath).exists()) {
+          uniquePath = '${dir.path}/$baseName($counter)$extension';
+          counter++;
+        }
+
+        final file = File(uniquePath);
+        await file.writeAsBytes(bytes);
+        return uniquePath;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<bool> _requestPermission() async {
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.status;
+      if (status != PermissionStatus.granted) {
+        final result = await Permission.storage.request();
+        if (result == PermissionStatus.granted) return true;
+      } else {
+        return true;
+      }
+      return true;
+    }
+    return true;
   }
 }

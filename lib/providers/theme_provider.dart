@@ -26,28 +26,34 @@ class AppTheme {
   });
 
   ThemeData toThemeData({required bool isDarkMode}) {
+    final bg = isDarkMode ? const Color(0xFF121212) : background;
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
         primary: primary,
         secondary: secondary,
-        surface: background,
+        surface: bg, // Samakan semua
+        background: bg, // Samakan semua
         brightness: isDarkMode ? Brightness.dark : Brightness.light,
       ),
-      scaffoldBackgroundColor:
-          isDarkMode ? const Color(0xFF121212) : background,
-      cardTheme: CardTheme(
+      scaffoldBackgroundColor: bg,
+      canvasColor: bg, // penting biar gak flicker putih
+
+      // sisanya biarkan sama seperti sebelumnya
+      cardTheme: CardThemeData(
         color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-              color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!),
+            color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+          ),
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: isDarkMode ? const Color(0xFF121212) : background,
+        backgroundColor: bg,
         foregroundColor: isDarkMode ? Colors.white : Colors.black87,
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle(
@@ -55,33 +61,6 @@ class AppTheme {
           statusBarIconBrightness:
               isDarkMode ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
-        ),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-      ),
-      switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return Colors.white;
-          }
-          return null;
-        }),
-        trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return primary;
-          }
-          return null;
-        }),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primary, width: 2),
         ),
       ),
     );

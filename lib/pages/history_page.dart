@@ -96,8 +96,7 @@ class HistoryPageState extends State<HistoryPage> {
               ),
               const SizedBox(height: 8),
               ListTile(
-                leading:
-                    Icon(Icons.file_download_outlined, color: theme.primary),
+                leading: Icon(Icons.file_upload_outlined, color: theme.primary),
                 title: Text(
                   'Export Data',
                   style: TextStyle(
