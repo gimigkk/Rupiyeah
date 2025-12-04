@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Main widget content (clickable) -->
+    <LinearLayout 
+        android:id="@+id/widget_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#6C63FF">
+
+        <!-- Header with title -->
+        <TextView
+            android:id="@+id/title_medium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💰 Daily Budget"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Main content with budget and stats -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="bottom">
+            
+            <!-- Left side: Budget info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                
+                <TextView
+                    android:id="@+id/budget_label_medium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Remaining Today"
+                    android:textSize="10sp"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginBottom="-2dp" />
+                
+                <TextView
+                    android:id="@+id/remaining_budget_medium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Rp 10.347"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginBottom="16dp" />
+                
+                <TextView
+                    android:id="@+id/spent_label_medium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Spent Today"
+                    android:textSize="9sp"
+                    android:textColor="#FFFFFF" />
+                
+                <TextView
+                    android:id="@+id/spent_today_medium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rp 0"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Right side: Percentage -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="end|bottom"
+                android:layout_marginStart="16dp">
+                
+                <TextView
+                    android:id="@+id/progress_text_medium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="83%"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF" />
+                
+                <TextView
+                    android:id="@+id/progress_label_medium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="spent"
+                    android:textSize="9sp"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Add button floating on top (separate clickable area) -->
+    <FrameLayout
+        android:id="@+id/add_button_medium"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"
+        android:background="@drawable/add_button_background">
+        
+        <TextView
+            android:id="@+id/add_button_icon_medium"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="+"
+            android:textSize="20sp"
+            android:textColor="#6C63FF"
+            android:textStyle="bold"
+            android:gravity="center" />
+    </FrameLayout>
+
+</FrameLayout>
