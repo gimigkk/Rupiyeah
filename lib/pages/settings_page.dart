@@ -524,7 +524,7 @@ class SettingsPageState extends State<SettingsPage> {
                           '• Minor code refactoring for better modularity\n'
                           '• Added borders to homepage for design consistency\n'
                           '• Added homescreen number animations\n'
-                          '• Project now on GitHub <3 github.com/gimigkk/Rupiyeah',
+                          '• Project now on GitHub: github.com/gimigkk/Rupiyeah',
                           style: TextStyle(
                             fontSize: 12,
                             color: subtitleColor,
@@ -544,8 +544,8 @@ class SettingsPageState extends State<SettingsPage> {
                           '• Fixed graph colors displaying incorrectly\n'
                           '• Fixed black screen issue when deleting transactions\n'
                           '• Fixed ghost transaction data bug\n'
-                          '• Fixed transactions disappearing when editing prior month data\n'
-                          '• Fixed transactions now transfer to correct month based on date\n'
+                          '• Fixed transactions disappearing when editing\n'
+                          '• Fixed transactions now move to correct month\n'
                           '• Fixed Android status bar color in light theme\n'
                           '• Fixed homescreen widget theme synchronization\n'
                           '• Fixed homescreen data accuracy',
