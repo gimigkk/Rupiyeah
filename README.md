@@ -114,4 +114,4 @@ Found a bug? [Open an issue](https://github.com/gimigkk/Rupiyeah/issues/new)
 
 ---
 
-**Version**: 3.0.0+3 | Made with ❤️ using Flutter
+**Version**: 4.0.0+4 | Made with ❤️ using Flutter
