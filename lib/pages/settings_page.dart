@@ -32,8 +32,11 @@ class SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
-    _loadVersion();
+    // Defer loading to allow transition to start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSettings();
+      _loadVersion();
+    });
   }
 
   @override
@@ -45,23 +48,29 @@ class SettingsPageState extends State<SettingsPage> {
   Future<void> _loadVersion() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-      setState(() {
-        _version = 'v${packageInfo.version}';
-      });
+      if (mounted) {
+        setState(() {
+          _version = 'v${packageInfo.version}';
+        });
+      }
     } catch (e) {
-      setState(() {
-        _version = 'v1.0.0';
-      });
+      if (mounted) {
+        setState(() {
+          _version = 'v1.0.0';
+        });
+      }
     }
   }
 
   void _loadSettings() {
-    setState(() {
-      currentMonth = DatabaseHelper.getCurrentMonth();
-      _manualBudgetController.text =
-          currentMonth!.manualDailyBudget.toStringAsFixed(0);
-      _allTags = DatabaseHelper.getAllTags();
-    });
+    if (mounted) {
+      setState(() {
+        currentMonth = DatabaseHelper.getCurrentMonth();
+        _manualBudgetController.text =
+            currentMonth!.manualDailyBudget.toStringAsFixed(0);
+        _allTags = DatabaseHelper.getAllTags();
+      });
+    }
   }
 
   @override
@@ -73,7 +82,17 @@ class SettingsPageState extends State<SettingsPage> {
         theme.isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
     if (currentMonth == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: theme.background,
+        appBar: AppBar(
+          title: Text('Settings', style: TextStyle(color: textColor)),
+          backgroundColor: theme.background,
+          foregroundColor: textColor,
+          elevation: 0,
+          iconTheme: IconThemeData(color: textColor),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
