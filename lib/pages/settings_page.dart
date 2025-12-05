@@ -516,10 +516,15 @@ class SettingsPageState extends State<SettingsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '• Added file attachments for transactions\n'
-                          '• Save Transaction button is now anchored to the bottom\n'
-                          '• A more responsive transaction page\n'
-                          '• Dev notes provides more information on updates',
+                          '• Added CSV/Excel export with statistics\n'
+                          '• Added haptic feedback when saving transactions\n'
+                          '• Improved widget data responsiveness and accuracy\n'
+                          '• Removed monthly surplus credit transfer feature\n'
+                          '• Added clear data feature to delete all transactions\n'
+                          '• Minor code refactoring for better modularity\n'
+                          '• Added borders to homepage for design consistency\n'
+                          '• Added homescreen number animations\n'
+                          '• Project now on GitHub <3 github.com/gimigkk/Rupiyeah',
                           style: TextStyle(
                             fontSize: 12,
                             color: subtitleColor,
@@ -536,11 +541,14 @@ class SettingsPageState extends State<SettingsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '• Fixed add transaction page swipe-to-dismiss gesture\n'
-                          '• Widget click now opens the app properly\n'
-                          '• Homepage auto-update issues resolved\n'
-                          '• Improved currency formatting consistency\n'
-                          '• Fixed transaction page stacking when opened multiple times via widget',
+                          '• Fixed graph colors displaying incorrectly\n'
+                          '• Fixed black screen issue when deleting transactions\n'
+                          '• Fixed ghost transaction data bug\n'
+                          '• Fixed transactions disappearing when editing prior month data\n'
+                          '• Fixed transactions now transfer to correct month based on date\n'
+                          '• Fixed Android status bar color in light theme\n'
+                          '• Fixed homescreen widget theme synchronization\n'
+                          '• Fixed homescreen data accuracy',
                           style: TextStyle(
                             fontSize: 12,
                             color: subtitleColor,
