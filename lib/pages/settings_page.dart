@@ -225,7 +225,8 @@ class SettingsPageState extends State<SettingsPage> {
                 inactiveTrackColor: Colors.grey[300],
                 onChanged: (value) {
                   theme.toggleDarkMode();
-                  WidgetService().updateWidget();
+                  // Pass the new dark mode value directly to avoid reading stale data
+                  WidgetService().updateWidget(forceDarkMode: value);
                 },
               ),
             ),
@@ -317,10 +318,20 @@ class SettingsPageState extends State<SettingsPage> {
                               children: [
                                 InkWell(
                                   onTap: () async {
-                                    themeProvider.setTheme(themeItem.id);
-                                    await WidgetService().updateWidget();
+                                    // Capture provider reference before async gap
+                                    final provider = themeProvider;
+                                    final isDark = provider.isDarkMode;
+
+                                    provider.setTheme(themeItem.id);
+                                    // Pass the new theme ID directly to avoid reading stale data
+                                    await WidgetService().updateWidget(
+                                      forceThemeId: themeItem.id,
+                                      forceDarkMode: isDark,
+                                    );
 
                                     if (!mounted) return;
+
+                                    // Use captured context-free values
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(

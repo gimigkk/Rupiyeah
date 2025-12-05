@@ -312,26 +312,39 @@ class HistoryPageState extends State<HistoryPage> {
 
   Future<void> _exportToPDF() async {
     try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('Generating PDF file...'),
-            ],
+      // Show loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Color.fromARGB(255, 0, 0, 0)),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Generating PDF file...'),
+              ],
+            ),
+            backgroundColor: Color.fromARGB(255, 255, 255, 255),
+            duration: const Duration(
+                days: 365), // Long duration, we'll dismiss it manually
           ),
-        ),
-      );
+        );
+      }
 
-      // Perform export - Modify ExportService to return the file path
+      // Perform export
       final filePath = await ExportService.exportToPDF(widget.monthId);
 
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
+      // Dismiss loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
 
       // Show success message with path and Open button
       if (mounted) {
@@ -342,7 +355,7 @@ class HistoryPageState extends State<HistoryPage> {
             backgroundColor: Colors.green,
             duration: const Duration(milliseconds: 2500),
             action: SnackBarAction(
-              label: 'Open',
+              label: '[OPEN]',
               textColor: Colors.white,
               onPressed: () async {
                 final result = await OpenFile.open(filePath);
@@ -364,8 +377,10 @@ class HistoryPageState extends State<HistoryPage> {
         );
       }
     } catch (e) {
-      // Close loading dialog if still open
-      if (mounted) Navigator.pop(context);
+      // Dismiss loading snackbar if still showing
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
 
       // Show error message with reason
       if (mounted) {
@@ -399,26 +414,39 @@ class HistoryPageState extends State<HistoryPage> {
 
   Future<void> _exportToCSV() async {
     try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('Generating CSV file...'),
-            ],
+      // Show loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Color.fromARGB(255, 0, 0, 0)),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Generating CSV file...'),
+              ],
+            ),
+            backgroundColor: Color.fromARGB(255, 255, 255, 255),
+            duration: const Duration(
+                days: 365), // Long duration, we'll dismiss it manually
           ),
-        ),
-      );
+        );
+      }
 
-      // Perform export - Modify ExportService to return the file path
+// Perform export
       final filePath = await ExportService.exportToCSV(widget.monthId);
 
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
+// Dismiss loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
 
       // Show success message with path and Open button
       if (mounted) {
@@ -429,7 +457,7 @@ class HistoryPageState extends State<HistoryPage> {
             backgroundColor: Colors.green,
             duration: const Duration(milliseconds: 2500),
             action: SnackBarAction(
-              label: 'Open',
+              label: '[OPEN]',
               textColor: Colors.white,
               onPressed: () async {
                 final result = await OpenFile.open(filePath);
@@ -451,8 +479,10 @@ class HistoryPageState extends State<HistoryPage> {
         );
       }
     } catch (e) {
-      // Close loading dialog if still open
-      if (mounted) Navigator.pop(context);
+      // Dismiss loading snackbar if still showing
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
 
       // Show error message with reason
       if (mounted) {

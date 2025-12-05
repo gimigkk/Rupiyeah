@@ -1,3 +1,4 @@
+// FILE: widget_service.dart
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,8 +15,10 @@ class WidgetService {
   static Function()? onAddTransactionRequested;
 
   /// Update widget with current financial data
-  Future<void> updateWidget() async {
+  /// Optional parameters allow forcing specific theme values without reading from database
+  Future<void> updateWidget({String? forceThemeId, bool? forceDarkMode}) async {
     try {
+      print('🔄 Widget Update Started');
       final prefs = await SharedPreferences.getInstance();
 
       // Get current month data
@@ -51,9 +54,11 @@ class WidgetService {
           ? ((spentToday / dailyBudget) * 100).clamp(0, 100).toInt()
           : 0;
 
-      // Get theme settings
-      final themeId = DatabaseHelper.getThemeId();
-      final isDarkMode = DatabaseHelper.getDarkMode();
+      // Get theme settings - use forced values if provided, otherwise read from database
+      final themeId = forceThemeId ?? DatabaseHelper.getThemeId();
+      final isDarkMode = forceDarkMode ?? DatabaseHelper.getDarkMode();
+
+      print('🎨 Theme Update: themeId=$themeId, isDarkMode=$isDarkMode');
 
       // Get theme colors
       final themeColors = _getThemeColors(themeId, isDarkMode);
@@ -100,9 +105,22 @@ class WidgetService {
         await prefs.setString('transaction${slot}_type', t.type);
       }
 
+      // CRITICAL: Ensure all data is committed to disk
+      final commitSuccess = await prefs.commit();
+      print('💾 SharedPreferences committed: $commitSuccess');
+
+      // Add timestamp to force widget refresh
+      await prefs.setInt('last_update', DateTime.now().millisecondsSinceEpoch);
+      await prefs.commit();
+
+      // Add small delay to ensure Android reads the updated preferences
+      await Future.delayed(const Duration(milliseconds: 150));
+
       // Trigger widget update after data is committed
       await _triggerWidgetUpdate();
+      print('✅ Widget Update Complete');
     } catch (e) {
+      print('❌ Widget Update Error: $e');
       // Silently fail - widget updates are non-critical
       // In production, you might want to log to a crash reporting service
     }
@@ -215,18 +233,38 @@ class WidgetService {
 
   /// Trigger widget update via platform channel with fallback
   Future<void> _triggerWidgetUpdate() async {
+    bool success = false;
+
+    // Try platform channel first
     try {
-      await _platform.invokeMethod('updateWidget');
+      final result = await _platform.invokeMethod('updateWidget');
+      print('📱 Platform channel update successful: $result');
+      success = true;
     } catch (e) {
-      // Fallback to HomeWidget plugin if platform channel fails
+      print('⚠️ Platform channel failed: $e');
+    }
+
+    // If standard update fails, try force refresh
+    if (!success) {
+      try {
+        final result = await _platform.invokeMethod('forceWidgetRefresh');
+        print('📱 Force refresh successful: $result');
+        success = true;
+      } catch (e2) {
+        print('⚠️ Force refresh failed: $e2');
+      }
+    }
+
+    // Last resort: Try HomeWidget plugin
+    if (!success) {
       try {
         await HomeWidget.updateWidget(
           name: 'BudgetWidgetProvider',
           androidName: 'BudgetWidgetProvider',
         );
-      } catch (e2) {
-        // Both methods failed - silently ignore
-        // Widget will update on next app launch or manual refresh
+        print('📱 HomeWidget plugin update successful');
+      } catch (e3) {
+        print('⚠️ All widget update methods failed');
       }
     }
   }

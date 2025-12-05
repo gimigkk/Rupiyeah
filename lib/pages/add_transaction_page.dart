@@ -10,6 +10,7 @@ import '../providers/theme_provider.dart';
 import '../services/widget_service.dart';
 import '../storage/file_helper.dart';
 import '../widgets/transaction_form_cards.dart';
+import 'package:vibration/vibration.dart';
 //import '../utils/currency_input_formatter.dart';
 
 class AddTransactionPage extends StatefulWidget {
@@ -179,6 +180,9 @@ class AddTransactionPageState extends State<AddTransactionPage> {
       } else {
         await _addNewTransaction(transaction);
       }
+
+      // Add vibration here - short 50ms pulse
+      Vibration.vibrate(duration: 50);
 
       // Refresh widget
       await WidgetService.refreshWidget();
