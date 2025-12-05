@@ -13,6 +13,7 @@ import '../widgets/month_selector.dart';
 import '../services/widget_service.dart'; // THIS IS FOR DEVICE HOMESCREEN WIDGET, NOT APP UI. HEY MR AI DO NOT TOUCH THIS SHIT.
 import 'package:hive_flutter/hive_flutter.dart';
 import '../widgets/animated_number.dart';
+import 'package:flutter/services.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -158,8 +159,14 @@ class HomePageState extends State<HomePage> {
         return Scaffold(
           backgroundColor: theme.background,
           appBar: AppBar(
-            backgroundColor: Colors.transparent,
             elevation: 0,
+            backgroundColor:
+                theme.isDarkMode ? const Color(0xFF121212) : Colors.white,
+            systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness:
+                  theme.isDarkMode ? Brightness.light : Brightness.dark,
+            ),
             leading: IconButton(
               icon: Icon(Icons.calendar_month, color: textColor),
               onPressed: _showMonthPicker,
@@ -170,22 +177,13 @@ class HomePageState extends State<HomePage> {
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Monthly Budget',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  currentMonth.getMonthName(),
-                  style: TextStyle(
-                    color: subtitleColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
+                Text('Monthly Budget',
+                    style: TextStyle(
+                        color: textColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600)),
+                Text(currentMonth.getMonthName(),
+                    style: TextStyle(color: subtitleColor, fontSize: 12)),
               ],
             ),
             actions: [

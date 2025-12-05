@@ -56,6 +56,9 @@ class AppTheme {
         backgroundColor: bg,
         foregroundColor: isDarkMode ? Colors.white : Colors.black87,
         elevation: 0,
+        surfaceTintColor: Colors.transparent, // 🔥 FIXES THE COLOR CHANGING
+        shadowColor: Colors.transparent, // extra safety
+        scrolledUnderElevation: 0, // prevents automatic elevation on scroll
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness:
