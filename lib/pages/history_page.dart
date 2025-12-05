@@ -755,12 +755,30 @@ class HistoryPageState extends State<HistoryPage> {
                     transaction: transaction,
                     isCompact: _isCompactView,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddTransactionPage(
-                              existingTransaction: transaction),
-                        ),
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        isScrollControlled: true,
+                        builder: (context) {
+                          return Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20),
+                              ),
+                            ),
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: FractionallySizedBox(
+                              heightFactor:
+                                  0.90, // <- SAME as your HomePage sheet
+                              child: AddTransactionPage(
+                                existingTransaction: transaction,
+                              ),
+                            ),
+                          );
+                        },
                       ).then((_) => _loadTransactions());
                     },
                   );
