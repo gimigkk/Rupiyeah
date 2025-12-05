@@ -67,7 +67,6 @@ class HistoryPageState extends State<HistoryPage> {
     });
   }
 
-  // Replace the _showOptionsMenu method with this updated version:
   void _showOptionsMenu() {
     final theme = Provider.of<ThemeProvider>(context, listen: false);
     final cardColor = theme.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
@@ -105,7 +104,7 @@ class HistoryPageState extends State<HistoryPage> {
                   ),
                 ),
                 subtitle: Text(
-                  'Export transactions to Excel or CSV',
+                  'Export transactions to PDF or CSV',
                   style: TextStyle(
                     color:
                         theme.isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -147,7 +146,6 @@ class HistoryPageState extends State<HistoryPage> {
     );
   }
 
-// Add this new method to show export format dialog:
   void _showExportDialog() {
     final theme = Provider.of<ThemeProvider>(context, listen: false);
     final cardColor = theme.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
@@ -160,119 +158,146 @@ class HistoryPageState extends State<HistoryPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Export Format',
-          style: TextStyle(color: textColor),
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Choose the format for your export:',
-              style: TextStyle(color: textColor, fontSize: 14),
-            ),
-            const SizedBox(height: 16),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Choose the format for your export:',
+                style: TextStyle(color: textColor, fontSize: 14),
+              ),
+              const SizedBox(height: 20),
 
-            // Excel Option
-            InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                _exportToExcel();
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: theme.primary.withOpacity(0.3)),
-                  borderRadius: BorderRadius.circular(12),
-                  color: theme.primary.withOpacity(0.05),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.table_chart, color: theme.primary, size: 28),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Excel (.xlsx)',
-                            style: TextStyle(
-                              color: textColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+              // PDF Option (RECOMMENDED)
+              InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                  _exportToPDF();
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.primary.withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(12),
+                    color: theme.primary.withOpacity(0.1),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.picture_as_pdf,
+                          color: theme.primary, size: 32),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'PDF (.pdf)',
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.primary,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'BEST',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Multiple sheets, charts & statistics',
-                            style: TextStyle(
-                              color: theme.isDarkMode
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
-                              fontSize: 12,
+                            const SizedBox(height: 4),
+                            Text(
+                              'Beautiful charts & statistics, works everywhere',
+                              style: TextStyle(
+                                color: theme.isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Icon(Icons.arrow_forward_ios,
-                        color: theme.primary, size: 16),
-                  ],
+                      Icon(Icons.arrow_forward_ios,
+                          color: theme.primary, size: 16),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // CSV Option
-            InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                _exportToCSV();
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.description, color: Colors.grey[600], size: 28),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'CSV (.csv)',
-                            style: TextStyle(
-                              color: textColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+              // CSV Option
+              InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                  _exportToCSV();
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.table_chart,
+                          color: Colors.grey[600], size: 28),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'CSV (.csv)',
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Simple format, all transactions',
-                            style: TextStyle(
-                              color: theme.isDarkMode
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
-                              fontSize: 12,
+                            const SizedBox(height: 4),
+                            Text(
+                              'Simple format, universal compatibility',
+                              style: TextStyle(
+                                color: theme.isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Icon(Icons.arrow_forward_ios,
-                        color: Colors.grey[600], size: 16),
-                  ],
+                      Icon(Icons.arrow_forward_ios,
+                          color: Colors.grey[600], size: 16),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -284,26 +309,25 @@ class HistoryPageState extends State<HistoryPage> {
     );
   }
 
-// Add method to export to Excel:
-  Future<void> _exportToExcel() async {
+  Future<void> _exportToPDF() async {
     try {
       // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
+        builder: (context) => const AlertDialog(
           content: Row(
             children: [
               CircularProgressIndicator(),
-              const SizedBox(width: 20),
-              Text('Generating Excel file...'),
+              SizedBox(width: 20),
+              Text('Generating PDF file...'),
             ],
           ),
         ),
       );
 
       // Perform export
-      await ExportService.exportToExcel(widget.monthId);
+      await ExportService.exportToPDF(widget.monthId);
 
       // Close loading dialog
       if (mounted) Navigator.pop(context);
@@ -312,8 +336,9 @@ class HistoryPageState extends State<HistoryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Excel file exported successfully!'),
+            content: const Text('PDF file exported successfully!'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,
@@ -330,8 +355,9 @@ class HistoryPageState extends State<HistoryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to export: $e'),
+            content: Text('Failed to export PDF: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,
@@ -343,18 +369,17 @@ class HistoryPageState extends State<HistoryPage> {
     }
   }
 
-// Add method to export to CSV:
   Future<void> _exportToCSV() async {
     try {
       // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
+        builder: (context) => const AlertDialog(
           content: Row(
             children: [
               CircularProgressIndicator(),
-              const SizedBox(width: 20),
+              SizedBox(width: 20),
               Text('Generating CSV file...'),
             ],
           ),
@@ -371,8 +396,9 @@ class HistoryPageState extends State<HistoryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('CSV file exported successfully!'),
+            content: const Text('CSV file exported successfully!'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,
@@ -391,6 +417,7 @@ class HistoryPageState extends State<HistoryPage> {
           SnackBar(
             content: Text('Failed to export: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,
@@ -469,7 +496,7 @@ class HistoryPageState extends State<HistoryPage> {
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('All transactions deleted for this month'),
             backgroundColor: Colors.green,
           ),
