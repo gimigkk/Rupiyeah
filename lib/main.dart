@@ -168,8 +168,8 @@ class _BudgetAppState extends State<BudgetApp> with WidgetsBindingObserver {
               .copyWith(
                 pageTransitionsTheme: const PageTransitionsTheme(
                   builders: {
-                    TargetPlatform.android: ZoomPageTransitionsBuilder(),
-                    TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
+                    TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
                   },
                 ),
               ),

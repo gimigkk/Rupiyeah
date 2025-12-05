@@ -11,7 +11,7 @@ import '../storage/database_helper.dart';
 
 class ExportService {
   /// Export current month's data to PDF with statistics and charts
-  static Future<void> exportToPDF(String monthId) async {
+  static Future<String> exportToPDF(String monthId) async {
     // Get month data and transactions
     final monthData = DatabaseHelper.getMonth(monthId);
     if (monthData == null) {
@@ -55,11 +55,11 @@ class ExportService {
         monthData);
 
     // Save and share the PDF
-    await _saveAndSharePDF(document, monthData.getMonthName());
+    return await _saveAndSharePDF(document, monthData.getMonthName());
   }
 
   /// Export current month's data to CSV (simple format)
-  static Future<void> exportToCSV(String monthId) async {
+  static Future<String> exportToCSV(String monthId) async {
     final monthData = DatabaseHelper.getMonth(monthId);
     if (monthData == null) {
       throw Exception('Month not found');
@@ -90,7 +90,7 @@ class ExportService {
     String csv = const ListToCsvConverter().convert(rows);
 
     // Save and share
-    await _saveAndShareCSV(csv, monthData.getMonthName());
+    return await _saveAndShareCSV(csv, monthData.getMonthName());
   }
 
   /// Create statistics summary page with charts
@@ -680,7 +680,7 @@ class ExportService {
         );
   }
 
-  static Future<void> _saveAndSharePDF(
+  static Future<String> _saveAndSharePDF(
       PdfDocument document, String monthName) async {
     print('📄 Starting PDF save process...');
     final fileName = 'Budget_${monthName.replaceAll(' ', '_')}.pdf';
@@ -702,6 +702,7 @@ class ExportService {
         text: 'Here is your budget report for $monthName',
       );
       print('📄 Share dialog opened');
+      return savedPath;
     } else {
       print('⚠️ Failed to save to Downloads, using temp directory');
       final directory = await getTemporaryDirectory();
@@ -711,10 +712,11 @@ class ExportService {
       await tempFile.writeAsBytes(bytes);
       await Share.shareXFiles([XFile(tempPath)]);
       print('📄 Share dialog opened from temp');
+      return tempPath;
     }
   }
 
-  static Future<void> _saveAndShareCSV(String csv, String monthName) async {
+  static Future<String> _saveAndShareCSV(String csv, String monthName) async {
     final fileName = 'Budget_${monthName.replaceAll(' ', '_')}.csv';
     final bytes = csv.codeUnits;
 
@@ -726,12 +728,14 @@ class ExportService {
         subject: 'Budget Report - $monthName',
         text: 'Here is your budget report for $monthName',
       );
+      return savedPath;
     } else {
       final directory = await getTemporaryDirectory();
       final tempPath = '${directory.path}/$fileName';
       final tempFile = File(tempPath);
       await tempFile.writeAsString(csv);
       await Share.shareXFiles([XFile(tempPath)]);
+      return tempPath;
     }
   }
 

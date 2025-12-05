@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:open_file/open_file.dart'; // Add this package to pubspec.yaml
 import '../storage/database_helper.dart';
 import '../models/transaction.dart';
 import '../widgets/transaction_tile.dart';
@@ -326,23 +327,38 @@ class HistoryPageState extends State<HistoryPage> {
         ),
       );
 
-      // Perform export
-      await ExportService.exportToPDF(widget.monthId);
+      // Perform export - Modify ExportService to return the file path
+      final filePath = await ExportService.exportToPDF(widget.monthId);
 
       // Close loading dialog
       if (mounted) Navigator.pop(context);
 
-      // Show success message
+      // Show success message with path and Open button
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('PDF file exported successfully!'),
+            persist: false,
+            content: Text('PDF exported to $filePath'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
+            duration: const Duration(milliseconds: 2500),
             action: SnackBarAction(
-              label: 'OK',
+              label: 'Open',
               textColor: Colors.white,
-              onPressed: () {},
+              onPressed: () async {
+                final result = await OpenFile.open(filePath);
+                if (result.type != ResultType.done) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        persist: false,
+                        duration: const Duration(milliseconds: 2500),
+                        content: Text('Could not open file: ${result.message}'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           ),
         );
@@ -351,13 +367,25 @@ class HistoryPageState extends State<HistoryPage> {
       // Close loading dialog if still open
       if (mounted) Navigator.pop(context);
 
-      // Show error message
+      // Show error message with reason
       if (mounted) {
+        String errorReason = 'Unknown error';
+        if (e.toString().contains('Permission denied')) {
+          errorReason = 'Permission denied - check storage permissions';
+        } else if (e.toString().contains('No space')) {
+          errorReason = 'Insufficient storage space';
+        } else if (e.toString().contains('FileSystemException')) {
+          errorReason = 'Unable to access storage';
+        } else {
+          errorReason = e.toString();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to export PDF: $e'),
+            persist: false,
+            content: Text('Failed to export PDF: $errorReason'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(milliseconds: 2500),
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,
@@ -386,23 +414,38 @@ class HistoryPageState extends State<HistoryPage> {
         ),
       );
 
-      // Perform export
-      await ExportService.exportToCSV(widget.monthId);
+      // Perform export - Modify ExportService to return the file path
+      final filePath = await ExportService.exportToCSV(widget.monthId);
 
       // Close loading dialog
       if (mounted) Navigator.pop(context);
 
-      // Show success message
+      // Show success message with path and Open button
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('CSV file exported successfully!'),
+            persist: false,
+            content: Text('CSV exported to $filePath'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
+            duration: const Duration(milliseconds: 2500),
             action: SnackBarAction(
-              label: 'OK',
+              label: 'Open',
               textColor: Colors.white,
-              onPressed: () {},
+              onPressed: () async {
+                final result = await OpenFile.open(filePath);
+                if (result.type != ResultType.done) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        persist: false,
+                        duration: const Duration(milliseconds: 2500),
+                        content: Text('Could not open file: ${result.message}'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           ),
         );
@@ -411,13 +454,25 @@ class HistoryPageState extends State<HistoryPage> {
       // Close loading dialog if still open
       if (mounted) Navigator.pop(context);
 
-      // Show error message
+      // Show error message with reason
       if (mounted) {
+        String errorReason = 'Unknown error';
+        if (e.toString().contains('Permission denied')) {
+          errorReason = 'Permission denied - check storage permissions';
+        } else if (e.toString().contains('No space')) {
+          errorReason = 'Insufficient storage space';
+        } else if (e.toString().contains('FileSystemException')) {
+          errorReason = 'Unable to access storage';
+        } else {
+          errorReason = e.toString();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to export: $e'),
+            persist: false,
+            content: Text('Failed to export CSV: $errorReason'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(milliseconds: 2500),
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,
@@ -497,6 +552,8 @@ class HistoryPageState extends State<HistoryPage> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
+            persist: false,
+            duration: Duration(milliseconds: 2500),
             content: Text('All transactions deleted for this month'),
             backgroundColor: Colors.green,
           ),
@@ -506,6 +563,8 @@ class HistoryPageState extends State<HistoryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            persist: false,
+            duration: const Duration(milliseconds: 2500),
             content: Text('Failed to delete transactions: $e'),
             backgroundColor: Colors.red,
           ),
